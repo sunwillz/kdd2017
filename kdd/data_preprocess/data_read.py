@@ -7,7 +7,6 @@ from __future__ import print_function
 from os import path
 from zipfile import ZipFile
 from datetime import datetime, timedelta
-from dateutil import relativedelta
 
 import numpy as np
 import pandas as pd
@@ -99,7 +98,7 @@ class database(object):
         :param freq:  该参数同page http://pandas.pydata.org/pandas-docs/stable/timeseries.html  上的用法
         :param sumed_in_one_day: bool.  True表示统计所有日期这个时间段的数据
         :param drop_dates: list. 需要drop掉的数据
-        :return: pandas.Series() 按照freq, sumed_in_one_day参数group 之后的流量
+        :return: pandas.Series() 按照freq, sumed_in_one_day参数group 之后的流量。 if sumed_in_one_day=False, 则返回
 
         :Notes: 如果想返回一天的数据，那么只需将start_date和end_date设置为这一天就行
             :example: 获取2016-10-06这天tollgate_id=1, direction=0的数据
@@ -119,28 +118,41 @@ class database(object):
 
         start_time = '00:00:00' if not start_time else start_time
         end_time = '23:59:59' if not end_time else end_time
-        start = start_date + " " + start_time
-        end = end_date + " " + end_time
-        train_volumes_count = train_volumes_count.loc[start:end]    # 截取需要时间的数据
-
-        drop_dates = [] if not drop_dates else drop_dates
-        for drop_date in drop_dates:
-            tomorrow = datetime.strptime(drop_date, "%Y-%m-%d") + timedelta(hours=24)
-            drop_indexs = pd.period_range(drop_date+' 00:00:00', tomorrow, freq=freq)
-            drop_indexs.drop([drop_indexs[0], drop_indexs[-1]])
-            drop_indexs = [pd.Timestamp(str(d)+":00") for d in drop_indexs]   # 每个元素为类似 `2016-01-01 00:20:00`
-            train_volumes_count = train_volumes_count.drop(drop_indexs, errors='ignore')
+        train_volumes_count = train_volumes_count.loc[start_date:end_date]    # 截取需要时间的数据
+        # 有一个bug, 需要分别截取每天的位于两个time段的数据
+        dt_series = pd.period_range(start_date, end_date, freq='D')  # 返回每天的日期 ‘2016-09-28’
         if sumed_in_one_day and not train_volumes_count.empty:
-            time_stamp = [str(t).split(' ')[-1] for t in train_volumes_count[start_date].index]   # 返回一天以内的每隔freq的时间戳
-            dt_series = pd.period_range(start_date, end_date, freq='D')    # 返回每天的日期 ‘2016-09-28’
+            time_stamp = [str(t).split(' ')[-1] for t in
+                          train_volumes_count[start_date].loc[
+                          start_date + " " + start_time : start_date+" "+end_time].index
+                          ]   # 返回一天以内start_time,到end_time的每隔freq的时间戳
             # res = pd.Series([0]*len(time_stamp), index=time_stamp)
             res = np.zeros(len(time_stamp))
             for dt in dt_series:
-                every_day_data = train_volumes_count[str(dt)]
+                every_day_data = train_volumes_count[str(dt)+" "+start_time : str(dt)+" "+end_time]   # 得到dt 这天start_time到end_time的数据
                 if every_day_data.shape == res.shape:
                     res += every_day_data.values
                 else:
-                    raise ValueError('有数据缺失')
-            train_volumes_count = pd.Series(res/len(dt_series), index=time_stamp)    # 返回平均每一天的freq的数据
+                    raise ValueError('some thing wrong, when day={day}, there are {day_count} '
+                                     'data while normal {norm_count} data'.format(day=dt, day_count=every_day_data.shape[0],
+                                                                                  norm_count=res.shape[0]))
+            train_volumes_count = pd.Series(res, index=time_stamp)    # 返回所有天的以freq统计的流量和的数据
+        elif not sumed_in_one_day and not train_volumes_count.empty:
+            all_index = []
+            for dt in dt_series:
+                all_index.extend(pd.period_range(str(dt)+" "+start_time, str(dt)+" "+end_time, freq=freq))
+            all_index = [str(i) for i in all_index]
+            train_volumes_count = train_volumes_count[train_volumes_count.index.isin(all_index)]
+        else:
+            return pd.Series()
+
+        # 去掉drop_dates里面的数据
+        drop_dates = [] if not drop_dates else drop_dates
+        for drop_date in drop_dates:
+            tomorrow = datetime.strptime(drop_date, "%Y-%m-%d") + timedelta(hours=24)
+            drop_indexs = pd.period_range(drop_date + ' 00:00:00', tomorrow, freq=freq)
+            drop_indexs.drop([drop_indexs[0], drop_indexs[-1]])
+            drop_indexs = [pd.Timestamp(str(d) + ":00") for d in drop_indexs]  # 每个元素为类似 `2016-01-01 00:20:00`
+            train_volumes_count = train_volumes_count.drop(drop_indexs, errors='ignore')
         return train_volumes_count
 

@@ -29,6 +29,9 @@ class graph(database):
         plt.figure()
         plt.title('tollgate_id={0}, direction={1}'.format(tollgate_id, direction))
         plt.grid(True)
-        plt.plot(volumes.index, volumes, kind_char, *args, **kwargs)
+        if sumed_in_one_day:
+            volumes.plot(grid=True)
+        else:
+            plt.plot(volumes.index, volumes, kind_char, *args, **kwargs)
         plt.show()
 

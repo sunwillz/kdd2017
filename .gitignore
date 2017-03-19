@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+# kdd ignore file
+datasets/*.zip
+datasets/*.csv
+.idea/
+
 # Distribution / packaging
 .Python
 env/

@@ -130,13 +130,13 @@ columns_17_19 = ["17:00:00", "17:20:00", "17:40:00", "18:00:00", "18:20:00", "18
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-def write_prediction_to_csv(file_name, predict_data):
+def write_prediction_to_csv(file_name, data):
     """
     :param file_name: 保存数据的路径
-    :param predict_data: 数据对象, 是`transformed_to_standard_predict`函数的返回
+    :param data: 数据对象, 是`transformed_to_standard_predict`函数的返回
     :return:
     """
-    predict_data.to_csv(file_name, index=False)
+    data.to_csv(file_name, index=False)
 
 
 def predict(online=False, n_neighbors=4):

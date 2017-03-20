@@ -139,11 +139,23 @@ def write_prediction_to_csv(file_name, predict_data):
     predict_data.to_csv(file_name, index=False)
 
 
-def transformed_to_standard_predict(online=False, n_neighbors=5):
+def predict(online=False, n_neighbors=4):
+    """返回官方要求数据格式"""
+    pred = _predict(online, n_neighbors)
+    return transformed_to_standard_data(pred)
+
+
+def get_test_data_standard():
+    """返回官方要求数据格式"""
+    test_data_list = get__test_data_list(offline_test_data)
+    return transformed_to_standard_data(test_data_list)
+
+
+def transformed_to_standard_data(data_list):
     """
+    :param data_list: predict(online=online, n_neighbors=n_neighbors)这种格式数据
     :return: 标准化预测为官方要求格式
     """
-    pred_list = predict(online=online, n_neighbors=n_neighbors)
     _columns_8_10 = columns_8_10[:]
     _columns_8_10.append("10:00:00")
     _columns_17_19 = columns_17_19[:]   # deep copy
@@ -151,7 +163,7 @@ def transformed_to_standard_predict(online=False, n_neighbors=5):
 
     columns = ['tollgate_id', 'time_window', 'direction', 'volume']
     standard_predict = pd.DataFrame(columns=columns)
-    for (_tollgate_id, _direction_id), pred in zip(tollgate_direction_list, pred_list):
+    for (_tollgate_id, _direction_id), pred in zip(tollgate_direction_list, data_list):
         for pre, time_seq in [(pred[0], _columns_8_10), (pred[1], _columns_17_19)]:
             window = ["[" + day + " " + beg + "," + day + " " + end + ")" for day in pre.index for beg, end in
                       zip(_columns_8_10[:-1], _columns_8_10[1:])]
@@ -163,12 +175,25 @@ def transformed_to_standard_predict(online=False, n_neighbors=5):
                 columns[3]: values          # volume
             }, columns=columns)
             standard_predict = standard_predict.append(df, ignore_index=True)
-    standard_predict[[columns[0], columns[2], columns[3]]] = standard_predict[
-        [columns[0], columns[2], columns[3]]].astype(np.int64)
+    standard_predict[[columns[0], columns[2]]] = standard_predict[
+        [columns[0], columns[2]]].astype(np.int64).astype(str)                          # str type
+    standard_predict[[columns[3]]] = standard_predict[[columns[3]]].astype(np.int64)    # int type
     return standard_predict
 
 
-def predict(online=False, n_neighbors=5):
+def get__test_data_list(off_line_test_data):
+    """返回的数据和predict格式一样, shape也一样"""
+    off_line_test_data = offline_test_data
+    res_data = []
+    for filter_data_8_10, filter_data_17_19 in off_line_test_data:      # loop 5
+        indexs = np.unique(filter_data_8_10.index.strftime("%Y-%m-%d"))
+        filter_data_8_10 = pd.DataFrame(filter_data_8_10.values.reshape(-1, 6), index=indexs, columns=columns_8_10)
+        filter_data_17_19 = pd.DataFrame(filter_data_17_19.values.reshape(-1, 6), index=indexs, columns=columns_17_19)
+        res_data.append((filter_data_8_10, filter_data_17_19))
+    return res_data
+
+
+def _predict(online=False, n_neighbors=5):
     """
     :return:  返回20Min预测数据, list
     """

@@ -166,7 +166,7 @@ def transformed_to_standard_data(data_list):
     for (_tollgate_id, _direction_id), pred in zip(tollgate_direction_list, data_list):
         for pre, time_seq in [(pred[0], _columns_8_10), (pred[1], _columns_17_19)]:
             window = ["[" + day + " " + beg + "," + day + " " + end + ")" for day in pre.index for beg, end in
-                      zip(_columns_8_10[:-1], _columns_8_10[1:])]
+                      zip(time_seq[:-1], time_seq[1:])]
             values = pre.values.reshape((-1,))  # 展平成一维
             df = pd.DataFrame({
                 columns[0]: _tollgate_id,   # tollgate_id

@@ -7,8 +7,7 @@ __pycache__/
 *.so
 
 # kdd ignore file
-datasets/*.zip
-datasets/*.csv
+datasets/
 .idea/
 
 # Distribution / packaging

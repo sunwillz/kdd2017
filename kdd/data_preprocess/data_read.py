@@ -158,11 +158,11 @@ class database(object):
         return volumes_count
 
     @staticmethod
-    def get_volume_by_time_for_test(tollgate_id, direction):
+    def get_volume_by_time_for_test(tollgate_id, direction, freq="20Min"):
         volume_6_8 = database.get_volume_by_time(tollgate_id, direction, start_time='06:00:00', end_time='07:59:59',
-                                                 sumed_in_one_day=False, test_data=True)    # 设置成8:00 会统计8:00-8:20的
+                                                 sumed_in_one_day=False, test_data=True, freq=freq)    # 设置成8:00 会统计8:00-8:20的
         volume_15_17 = database.get_volume_by_time(tollgate_id, direction, start_time='15:00:00', end_time='16:59:59',
-                                                   sumed_in_one_day=False, test_data=True)
+                                                   sumed_in_one_day=False, test_data=True, freq=freq)
         return volume_6_8, volume_15_17
 
     @staticmethod

@@ -23,9 +23,9 @@ def task1_eva_metrics(predict, actual):
     else:
         predict_data = predict
         actual_data = actual
-    predict_data.rename(index=str, columns={"ETA": "ETA_pre"}, inplace=True)
-    actual_data.rename(index=str, columns={"ETA": "ETA_actual"}, inplace=True)
-    df = pd.merge(predict_data,actual_data,on=['intersection_id','tollgate_id','time_window'])
+    predict_data.rename(index=str, columns={"avg_travel_time": "ETA_pre"}, inplace=True)
+    actual_data.rename(index=str, columns={"avg_travel_time": "ETA_actual"}, inplace=True)
+    df = pd.merge(predict_data, actual_data, on=['intersection_id', 'tollgate_id', 'time_window'])
     df['ETA_pre'].astype(float)
     df['ETA_actual'].astype(float)
     df['diff'] = (np.abs(df['ETA_pre']-df['ETA_actual']))/df['ETA_actual']
@@ -53,11 +53,11 @@ def task2_eva_metrics(predict, actual):
         actual_data = actual
     predict_data.rename(index=str, columns={"volume": "pre_volume"}, inplace=True)
     actual_data.rename(index=str, columns={"volume": "act_volume"}, inplace=True)
-    df = pd.merge(predict_data,actual_data,on=['tollgate_id','time_window','direction'])
+    df = pd.merge(predict_data,actual_data, on=['tollgate_id', 'time_window','direction'])
     df['pre_volume'].astype(int)
     df['act_volume'].astype(int)
     df['diff'] = (np.abs(df['pre_volume']-df['act_volume']))/df['act_volume']
-    grouped_by_id = df.groupby(['tollgate_id','direction'])['diff'].mean()
+    grouped_by_id = df.groupby(['tollgate_id', 'direction'])['diff'].mean()
     grouped_by_id = grouped_by_id.reset_index()
     MAPE = grouped_by_id['diff'].mean()
     

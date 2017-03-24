@@ -291,7 +291,7 @@ def ETA_predict(train_df,test_df):
 
     # write_to_file(pred_df, 'task1_result.csv')
 
-    task1_eva_metrics(pred_df.copy(), actual_df.copy())
+    return task1_eva_metrics(pred_df.copy(), actual_df.copy())
 
 def main():
 

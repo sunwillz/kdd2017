@@ -30,69 +30,10 @@ import data as task_2_data
 from ..util import parse_freq
 
 
-def write_prediction_to_csv(file_name, data):
-    """
-    :param file_name: 保存数据的路径
-    :param data: 数据对象, 是`transformed_to_standard_predict`函数的返回
-    :return:
-    """
-    data.to_csv(file_name, index=False)
-
-
 def predict(online=False, n_neighbors=4, freq="20Min"):
     """返回官方要求的20Min interval数据格式"""
     pred = _predict(online, n_neighbors, freq=freq)
-    return transformed_to_standard_data(pred)
-
-
-def get_test_data_standard():
-    """返回官方要求的20Min interval数据格式"""
-    offline_test_data = task_2_data.get_offline_test_data()
-    test_data_list = get_test_data_list(offline_test_data)
-    return transformed_to_standard_data(test_data_list)
-
-
-def transformed_to_standard_data(data_list):
-    """
-    :param data_list: predict(online=online, n_neighbors=n_neighbors)这种格式数据
-    :return: 标准化预测为官方要求格式
-    """
-    _columns_8_10 = task_2_data.get_columns_2hours('08:00:00', freq='20Min')[:]
-    _columns_8_10.append("10:00:00")
-    _columns_17_19 = task_2_data.get_columns_2hours('17:00:00', freq='20Min')[:]   # deep copy
-    _columns_17_19.append("19:00:00")
-
-    columns = ['tollgate_id', 'time_window', 'direction', 'volume']
-    standard_predict = pd.DataFrame(columns=columns)
-    for (_tollgate_id, _direction_id), pred in zip(task_2_data.tollgate_direction_list, data_list):
-        for pre, time_seq in [(pred[0], _columns_8_10), (pred[1], _columns_17_19)]:
-            window = ["[" + day + " " + beg + "," + day + " " + end + ")" for day in pre.index for beg, end in
-                      zip(time_seq[:-1], time_seq[1:])]
-            values = pre.values.reshape((-1,))  # 展平成一维
-            df = pd.DataFrame({
-                columns[0]: _tollgate_id,   # tollgate_id
-                columns[1]: window,         # time_window
-                columns[2]: _direction_id,  # direction
-                columns[3]: values          # volume
-            }, columns=columns)
-            standard_predict = standard_predict.append(df, ignore_index=True)
-    standard_predict[[columns[0], columns[2]]] = standard_predict[
-        [columns[0], columns[2]]].astype(np.int64).astype(str)                          # str type
-    standard_predict[[columns[3]]] = standard_predict[[columns[3]]].astype(np.int64)    # int type
-    return standard_predict
-
-
-def get_test_data_list(off_line_test_data):
-    """返回的数据和predict格式一样, shape也一样"""
-    res_data = []
-    for filter_data_8_10, filter_data_17_19 in off_line_test_data:      # loop 5
-        indexs = np.unique(filter_data_8_10.index.strftime("%Y-%m-%d"))
-        filter_data_8_10 = pd.DataFrame(filter_data_8_10.values.reshape(-1, 6), index=indexs,
-                                        columns=task_2_data.get_columns_2hours('08:00:00', freq='20Min'))
-        filter_data_17_19 = pd.DataFrame(filter_data_17_19.values.reshape(-1, 6), index=indexs,
-                                         columns=task_2_data.get_columns_2hours('17:00:00', freq='20Min'))
-        res_data.append((filter_data_8_10, filter_data_17_19))
-    return res_data
+    return task_2_data.transformed_to_standard_data(pred)
 
 
 def _predict(online=False, n_neighbors=5, freq="20Min"):

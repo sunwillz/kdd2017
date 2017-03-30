@@ -11,7 +11,11 @@
     训练集：2016.07.19-2016.10.10,[6:00-8:00][15:00-17:00]和[8:00-10:00][17:00-19:00]
     测试集：2016.10.11-2016.10.17,已知[6:00-8:00][15:00-17:00]预测[8:00-10:00][17:00-19:00]
 """
+<<<<<<< HEAD
 import os
+=======
+import os 
+>>>>>>> 4ae698d6107a30fd89a6d11b220dfc3ade0a8021
 from os import path
 import datetime
 import pandas as pd
@@ -20,6 +24,7 @@ import re
 from sklearn.neighbors import NearestNeighbors
 from sklearn.ensemble import RandomForestRegressor
 
+<<<<<<< HEAD
 from kdd.util import PROJECT_PATH
 
 from kdd.metrics import task1_eva_metrics
@@ -28,6 +33,15 @@ from kdd.metrics import task1_eva_metrics
 dir_path = path.join(PROJECT_PATH, "datasets/dataSets/")
 train_data_path = path.join(dir_path, "training/")
 test_data_path = path.join(dir_path, "testing_phase1/")
+=======
+# from ..util import PROJECT_PATH
+from ..metrics import task1_eva_metrics
+
+PROJECT_PATH = os.path.dirname(os.path.abspath(__name__))
+dir_path =path.join(PROJECT_PATH, "/datasets/dataSets/")
+train_data_path = path.join(dir_path, "/training/")
+test_data_path = path.join(dir_path, "/testing_phase1/")
+>>>>>>> 4ae698d6107a30fd89a6d11b220dfc3ade0a8021
 
 def read_training_data(filename):
     """
@@ -334,6 +348,11 @@ def ETA_predict():
     # write_to_file(pred_df, 'task1_result.csv')
 
     return task1_eva_metrics(pred_df.copy(), actual_df.copy())
+<<<<<<< HEAD
+=======
+
+def main():
+>>>>>>> 4ae698d6107a30fd89a6d11b220dfc3ade0a8021
 
 
 training_file = 'trajectories(table 5)_training.csv'

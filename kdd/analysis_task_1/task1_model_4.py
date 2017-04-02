@@ -36,8 +36,8 @@ def drop_spec_date(data, start_date='2016-07-18', end_date='2016-10-18'):
     :param end_date: 输出数据为当天日期，string类型
     :return:
     """
-    date_window = [[start_date, '2016-09-15 00:00:00'], ['2016-09-17 23:59:59', '2016-09-30 00:00:00'], ['2016-10-8 23:59:59', end_date]]
-    # date_window = [[start_date, '2016-09-15 00:00:00']]
+    #date_window = [[start_date, '2016-09-15 00:00:00'], ['2016-09-17 23:59:59', '2016-09-30 00:00:00'], ['2016-10-8 23:59:59', end_date]]
+    date_window = [[start_date, '2016-09-15 00:00:00']]
     data_df = pd.DataFrame(columns=data.columns)
     for item in date_window:
         _df = data[(data.starting_time >= item[0]) & (data.starting_time <= item[1])]
@@ -247,4 +247,4 @@ def test():
 
     result_df[['tollgate_id']] = result_df[['tollgate_id']].astype(int)
     result_df[['avg_travel_time']] = result_df[['avg_travel_time']].astype(float)
-    result_df.to_csv('task1_model_4_1.submit.csv', index=False)
+    result_df.to_csv('task1_model_4.submit.csv', index=False)

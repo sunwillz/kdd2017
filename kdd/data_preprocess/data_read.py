@@ -19,6 +19,10 @@ class database(object):
     和数据有关的基类。
     鉴于数据量不是很大，采用直接将数据用pandas 加载到内存
     """
+    holiday = ['2016-10-01', '2016-10-02', '2016-10-03', '2016-10-04', '2016-10-05', '2016-10-06', '2016-10-07']
+    abnormal_days = holiday + ['2016-09-30']
+    weekend = ['2016-09-24', '2016-09-25', '2016-10-15', '2016-10-16']  # 10-8, 9 这两天因为十一是工作日
+
     _data_dir = path.join(PROJECT_PATH, 'datasets')     # 包含dataSets.zip 的那个文件夹
     _zip_file = path.join(_data_dir, 'dataSets.zip')
     with ZipFile(_zip_file) as my_zip:
@@ -60,29 +64,6 @@ class database(object):
             #  u'wind_speed', u'temperature', u'rel_humidity', u'precipitation']
             # index = ['date', 'hour']
             test_weather = pd.read_csv(f, parse_dates=['date'], index_col=['date', 'hour'])
-
-    @staticmethod
-    def get_vehicle_travel_time(intersection_id, tollgate_id, starting_time, precipitation):
-        """
-        :param intersection_id: str, 十字路口id, 可选value有[A, B, C]
-        :param tollgate_id: int, 收费站id, 可选value有[1, 2, 3]
-        :param starting_time: str or timestamp,
-        :param precipitation: tuple, len(precipitation)=2,降雨量过滤
-                precipitation[0]表示降雨量下界, precipitation[1] 表示降雨量上界
-
-        :return: 在intersection_id和tollgate_id之间的travel_time         # 还未定义返回的数据结构
-        """
-        pass
-
-    @staticmethod
-    def get_link_average_speed(direction=-1, **kwargs):
-        """
-        :param direction: int, 0:entry, 1:exit. -1:all
-        :param kwargs: dict
-
-        :return: pandas.DataFrame(). columns=['link_id', 'direction', 'avg_speed']  # 还未定义好
-        """
-        pass
 
     @staticmethod
     def get_volume_by_time(tollgate_id, direction, start_time=None, end_time=None, start_date=None,
@@ -137,7 +118,8 @@ class database(object):
                     raise ValueError('some thing wrong, when day={day}, there are {day_count} '
                                      'data while normal {norm_count} data'.format(day=dt, day_count=every_day_data.shape[0],
                                                                                   norm_count=res.shape[0]))
-            volumes_count = pd.Series(res, index=time_stamp)    # 返回所有天的以freq统计的流量和的数据
+            # volumes_count = pd.Series(res, index=time_stamp)    # 返回所有天的以freq统计的流量和的数据
+            volumes_count = pd.Series(res, index=pd.TimedeltaIndex(time_stamp))    # 返回所有天的以freq统计的流量和的数据
         elif not sumed_in_one_day and not volumes_count.empty:
             all_index = []
             for dt in dt_series:
@@ -155,6 +137,7 @@ class database(object):
             drop_indexs.drop([drop_indexs[0], drop_indexs[-1]])
             drop_indexs = [pd.Timestamp(str(d) + ":00") for d in drop_indexs]  # 每个元素为类似 `2016-01-01 00:20:00`
             volumes_count = volumes_count.drop(drop_indexs, errors='ignore')
+        assert volumes_count.isnull().sum() == 0, "there are nan in data. tollgate_id={0}, direction={1}".format(tollgate_id, direction)     # 断言数据中是否存在nan
         return volumes_count
 
     @staticmethod

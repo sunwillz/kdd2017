@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import matplotlib.pyplot as plt
+# import pandas as pd
 
 from .data_read import database
 
@@ -37,3 +38,34 @@ class graph(database):
             plt.plot(volumes.index, volumes, kind_char, *args, **kwargs)
         plt.show()
 
+    @classmethod
+    def contrast_days_by_volume(cls, args_list, draw_avg=False, tollgate_id=None, direction=None, drop_dates=None):
+        """
+        :param args_list: list. 每个元素的格式为(tollgate_id, direction, days)
+        :param draw_avg: bool. 是否绘制出来tollgate_id, direction的日平均流量
+        :param tollgate_id.  在draw_avg=True 有效.  参数详见`cls.get_volume_by_time`
+        :param direction. 在draw_avg=True 有效     参数详见`cls.get_volume_by_time`
+        :param drop_dates. 在draw_avg=True 有效.    参数详见`cls.get_volume_by_time`
+        :return: 各图对比
+        :example:
+            >>>graph.contrast_days_by_volume([[2, 0, '2016-09-30'], [2, 0, '2016-09-25']])
+        """
+        from random import randint
+        # from matplotlib.dates import DateFormatter
+        fig = plt.figure()
+        # ax1 = fig.add_subplot(111)
+        # ax1.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d %H:%M:%S'))  # 设置时间标签显示格式
+        # plt.xticks(rotation=90)
+        if draw_avg:
+            avg_volume = cls.get_volume_by_time(tollgate_id, direction, drop_dates=drop_dates, sumed_in_one_day=True)
+            # plt.xticks(pd.date_range(avg_volume.index[0], avg_volume.index[-1], freq='1min'))  # 时间间隔
+            plt.plot(avg_volume.index, avg_volume/(29.0-len(drop_dates)),
+                     label='({0}, {1})'.format(tollgate_id, direction), linewidth=3)
+        for arg in args_list:
+            volume = cls.get_volume_by_time(arg[0], arg[1], start_date=arg[2], end_date=arg[2], sumed_in_one_day=True)
+            # plt.xticks(pd.date_range(volume.index[0], volume.index[-1], freq='1min'))  # 时间间隔
+            plt.plot(volume.index, volume.values, label='({0}, {1})'.format(arg[0], arg[1])+str(arg[2]),
+                     linewidth=randint(1, 2))
+        plt.grid(True)
+        plt.legend(loc='upper left')
+        plt.show()

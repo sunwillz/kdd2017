@@ -33,6 +33,7 @@ class graph(database):
         plt.title('tollgate_id={0}, direction={1}'.format(tollgate_id, direction))
         plt.grid(True)
         if sumed_in_one_day:
+            volumes.index = volumes.index.format()
             volumes.plot(grid=True)
         else:
             plt.plot(volumes.index, volumes, kind_char, *args, **kwargs)
@@ -48,7 +49,8 @@ class graph(database):
         :param drop_dates. 在draw_avg=True 有效.    参数详见`cls.get_volume_by_time`
         :return: 各图对比
         :example:
-            >>>graph.contrast_days_by_volume([[2, 0, '2016-09-30'], [2, 0, '2016-09-25']])
+            >>>graph.contrast_days_by_volume([[2, 0, '2016-09-30'], [2, 0, '2016-09-25']],
+            ...draw_avg=1, tollgate_id=2, direction=0)
         """
         from random import randint
         # from matplotlib.dates import DateFormatter
@@ -56,10 +58,11 @@ class graph(database):
         # ax1 = fig.add_subplot(111)
         # ax1.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d %H:%M:%S'))  # 设置时间标签显示格式
         # plt.xticks(rotation=90)
+        len_drop_days = len(drop_dates) if drop_dates!= None else 0
         if draw_avg:
             avg_volume = cls.get_volume_by_time(tollgate_id, direction, drop_dates=drop_dates, sumed_in_one_day=True)
             # plt.xticks(pd.date_range(avg_volume.index[0], avg_volume.index[-1], freq='1min'))  # 时间间隔
-            plt.plot(avg_volume.index, avg_volume/(29.0-len(drop_dates)),
+            plt.plot(avg_volume.index, avg_volume/(29.0-len_drop_days),
                      label='({0}, {1})'.format(tollgate_id, direction), linewidth=3)
         for arg in args_list:
             volume = cls.get_volume_by_time(arg[0], arg[1], start_date=arg[2], end_date=arg[2], sumed_in_one_day=True)

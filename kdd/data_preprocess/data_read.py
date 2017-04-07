@@ -45,12 +45,6 @@ class database(object):
             # [u'time', u'tollgate_id', u'direction', u'vehicle_model', u'has_etc', u'vehicle_type']
             train_volume = pd.read_csv(f, parse_dates=['time'])
 
-        with my_zip.open('dataSets/training/weather (table 7)_training.csv') as f:
-            # columns = [u'pressure', u'sea_pressure', u'wind_direction',
-            #  u'wind_speed', u'temperature', u'rel_humidity', u'precipitation']
-            # index = ['date', 'hour']
-            train_weather = pd.read_csv(f, parse_dates=['date'], index_col=['date', 'hour'])
-
         with my_zip.open('dataSets/testing_phase1/trajectories(table 5)_test1.csv') as f:
             # [u'intersection_id', u'tollgate_id', u'vehicle_id', u'starting_time', u'travel_seq', u'travel_time']
             test_trajectories = pd.read_csv(f, parse_dates=['starting_time'])
@@ -64,6 +58,12 @@ class database(object):
             #  u'wind_speed', u'temperature', u'rel_humidity', u'precipitation']
             # index = ['date', 'hour']
             test_weather = pd.read_csv(f, parse_dates=['date'], index_col=['date', 'hour'])
+
+    with open(path.join(_data_dir, 'weather (table 7)_training_update.csv')) as f:
+        # columns = [u'pressure', u'sea_pressure', u'wind_direction',
+        #  u'wind_speed', u'temperature', u'rel_humidity', u'precipitation']
+        # index = ['date', 'hour']
+        train_weather = pd.read_csv(f, parse_dates=['date'], index_col=['date', 'hour'])
 
     @staticmethod
     def get_volume_by_time(tollgate_id, direction, start_time=None, end_time=None, start_date=None,

@@ -37,6 +37,25 @@ offline_fit_or_test_date = ("2016-10-11", "2016-10-17")
 online_train_or_filter_date = ("2016-09-19", "2016-10-17")
 online_fit_date = ("2016-10-18", "2016-10-24")
 
+_sw_index = ["08:00:00", "08:20:00", "08:40:00", "09:00:00", "09:20:00", "09:40:00"]
+_xw_index = ["17:00:00", "17:20:00", "17:40:00", "18:00:00", "18:20:00", "18:40:00"]
+
+# 该常量用于model_1.predict, model_3.predict 的drop_days参数,
+abnormal_days = [(['2016-10-01', '2016-09-30'], ['2016-10-01', '2016-09-30']),   # (1,0)
+                 (['2016-09-30'], ['2016-09-30']),                           # (1,1)
+                 (['2016-09-28', '2016-09-30'], ['2016-09-28', '2016-09-30']),   # (2,0)
+                 (['2016-09-30'], ['2016-09-30']),   # (3,0)
+                 # (['2016-09-20', '2016-09-30'], ['2016-09-30'])    # (3,1)
+                 (['2016-09-30'], ['2016-09-30'])    # (3,1)
+                 ]
+
+no_drop_days = [([], []),
+                ([], []),
+                ([], []),
+                ([], []),
+                ([], []),
+                ]
+
 
 def get_columns_2hours(start, freq='20Min'):
     """
@@ -52,12 +71,12 @@ def get_columns_2hours(start, freq='20Min'):
 # start_time='15:00:00', end_time='16:59:59'
 def get_offline_fit_data(freq='20Min', offline_fit_date=offline_fit_or_test_date, drop_dates=None):
     offline_fit_data = [(database.get_volume_by_time(tollgate_id, direction_id, start_time='06:00:00', end_time='07:59:59',
-                                                     sumed_in_one_day=False, freq=freq, drop_dates=drop_dates,
+                                                     sumed_in_one_day=False, freq=freq, drop_dates=sw,
                                                      start_date=offline_fit_date[0], end_date=offline_fit_date[-1]),
                          database.get_volume_by_time(tollgate_id, direction_id, start_time='15:00:00', end_time='16:59:59',
-                                                     sumed_in_one_day=False, freq=freq, drop_dates=drop_dates,
+                                                     sumed_in_one_day=False, freq=freq, drop_dates=xw,
                                                      start_date=offline_fit_date[0], end_date=offline_fit_date[-1]))
-                         for tollgate_id, direction_id in tollgate_direction_list]
+                        for (tollgate_id, direction_id), (sw, xw) in zip(tollgate_direction_list, drop_dates)]
     return offline_fit_data
 
 
@@ -67,11 +86,12 @@ def get_offline_fit_data(freq='20Min', offline_fit_date=offline_fit_or_test_date
 # start_time='17:00:00', end_time='18:59:59'
 def get_offline_test_data(freq="20Min", offline_test_date=offline_fit_or_test_date, drop_dates=None):
     offline_test_data = [(database.get_volume_by_time(tollgate_id, direction_id, start_time='08:00:00', end_time='09:59:59',
-                                                      sumed_in_one_day=False, freq=freq, drop_dates=drop_dates,
+                                                      sumed_in_one_day=False, freq=freq,
                                                       start_date=offline_test_date[0], end_date=offline_test_date[-1]),
                           database.get_volume_by_time(tollgate_id, direction_id, start_time='17:00:00', end_time='18:59:59',
-                                                      sumed_in_one_day=False, freq=freq, drop_dates=drop_dates,
+                                                      sumed_in_one_day=False, freq=freq,
                                                       start_date=offline_test_date[0], end_date=offline_test_date[-1]))
+                         # for (tollgate_id, direction_id), (sw, xw) in zip(tollgate_direction_list, drop_dates)]
                          for tollgate_id, direction_id in tollgate_direction_list]
     return offline_test_data
 
@@ -79,12 +99,12 @@ def get_offline_test_data(freq="20Min", offline_test_date=offline_fit_or_test_da
 # 线下训练数据集,  2016.09.19 ~ 2016.10.10
 def get_offline_train_data(freq="20Min", offline_train_date=offline_train_or_filter_date, drop_dates=None):
     offline_train_data = [(database.get_volume_by_time(tollgate_id, direction_id, start_time='06:00:00', end_time='07:59:59',
-                                                       sumed_in_one_day=False, freq=freq, drop_dates=drop_dates,
+                                                       sumed_in_one_day=False, freq=freq, drop_dates=sw,
                                                        start_date=offline_train_date[0], end_date=offline_train_date[-1]),
                           database.get_volume_by_time(tollgate_id, direction_id, start_time='15:00:00', end_time='16:59:59',
-                                                      sumed_in_one_day=False, freq=freq, drop_dates=drop_dates,
+                                                      sumed_in_one_day=False, freq=freq, drop_dates=xw,
                                                       start_date=offline_train_date[0], end_date=offline_train_date[-1]))
-                          for tollgate_id, direction_id in tollgate_direction_list]
+                          for (tollgate_id, direction_id), (sw, xw) in zip(tollgate_direction_list, drop_dates)]
     return offline_train_data
 
 
@@ -95,12 +115,12 @@ def get_offline_train_data(freq="20Min", offline_train_date=offline_train_or_fil
 # 比如对于要预测, 2016-10-23号 8:00-10:00的流量,找到了9-22, 9-27这两天数据最相近, 然后我们需要在这个数据集找到这两天的8:00-10:00的数据
 def get_offline_filter_data(freq="20Min", offline_filter_date=offline_train_or_filter_date, drop_dates=None):
     offline_filter_data = [(database.get_volume_by_time(tollgate_id, direction_id, start_time='08:00:00', end_time='09:59:59',
-                                                        sumed_in_one_day=False, freq=freq, drop_dates=drop_dates,
+                                                        sumed_in_one_day=False, freq=freq, drop_dates=sw,
                                                         start_date=offline_filter_date[0], end_date=offline_filter_date[-1]),
                           database.get_volume_by_time(tollgate_id, direction_id, start_time='17:00:00', end_time='18:59:59',
-                                                      sumed_in_one_day=False, freq=freq, drop_dates=drop_dates,
+                                                      sumed_in_one_day=False, freq=freq, drop_dates=xw,
                                                       start_date=offline_filter_date[0], end_date=offline_filter_date[-1]))
-                          for tollgate_id, direction_id in tollgate_direction_list]
+                           for (tollgate_id, direction_id), (sw, xw) in zip(tollgate_direction_list, drop_dates)]
     return offline_filter_data
 
 
@@ -115,12 +135,12 @@ def get_online_fit_data(freq="20Min"):
 # 线上训练数据集,  2016.09.19 ~ 2016.10.17
 def get_online_train_data(freq="20Min", online_train_date=online_train_or_filter_date, drop_dates=None):
     online_train_data = [(database.get_volume_by_time(tollgate_id, direction_id, start_time='06:00:00', end_time='07:59:59',
-                                                      sumed_in_one_day=False, freq=freq, drop_dates=drop_dates,
+                                                      sumed_in_one_day=False, freq=freq, drop_dates=sw,
                                                       start_date=online_train_date[0], end_date=online_train_date[-1]),
                           database.get_volume_by_time(tollgate_id, direction_id, start_time='15:00:00', end_time='16:59:59',
-                                                      sumed_in_one_day=False, freq=freq, drop_dates=drop_dates,
+                                                      sumed_in_one_day=False, freq=freq, drop_dates=xw,
                                                       start_date=online_train_date[0], end_date=online_train_date[-1]))
-                         for tollgate_id, direction_id in tollgate_direction_list]
+                         for (tollgate_id, direction_id), (sw, xw) in zip(tollgate_direction_list, drop_dates)]
     return online_train_data
 
 
@@ -129,12 +149,12 @@ def get_online_train_data(freq="20Min", online_train_date=online_train_or_filter
 # start_time='17:00:00', end_time='18:59:59'
 def get_online_filter_data(freq="20Min", online_filter_date=online_train_or_filter_date, drop_dates=None):
     online_filter_data = [(database.get_volume_by_time(tollgate_id, direction_id, start_time='08:00:00', end_time='09:59:59',
-                                                      sumed_in_one_day=False, freq=freq, drop_dates=drop_dates,
+                                                      sumed_in_one_day=False, freq=freq, drop_dates=sw,
                                                       start_date=online_filter_date[0], end_date=online_filter_date[-1]),
                           database.get_volume_by_time(tollgate_id, direction_id, start_time='17:00:00', end_time='18:59:59',
-                                                      sumed_in_one_day=False, freq=freq, drop_dates=drop_dates,
+                                                      sumed_in_one_day=False, freq=freq, drop_dates=xw,
                                                       start_date=online_filter_date[0], end_date=online_filter_date[-1]))
-                         for tollgate_id, direction_id in tollgate_direction_list]
+                          for (tollgate_id, direction_id), (sw, xw) in zip(tollgate_direction_list, drop_dates)]
     return online_filter_data
 
 
@@ -164,7 +184,7 @@ def transformed_to_standard_data(data_list):
             standard_predict = standard_predict.append(df, ignore_index=True)
     standard_predict[[columns[0], columns[2]]] = standard_predict[
         [columns[0], columns[2]]].astype(np.int64).astype(str)                          # str type
-    standard_predict[[columns[3]]] = standard_predict[[columns[3]]].astype(np.int64)    # int type
+    standard_predict[[columns[3]]] = standard_predict[[columns[3]]].astype(np.int64)    # 这里如果用的话,应该先round, 然后int. 但是这儿int 貌似向下取整效果更好,???
     return standard_predict
 
 

@@ -30,7 +30,7 @@ import data as task_2_data
 from ..util import parse_freq
 
 
-def predict(online=False, n_neighbors=4, freq="20Min", drop_dates=None):
+def predict(online=False, n_neighbors=4, freq="20Min", drop_dates=task_2_data.no_drop_days):
     """返回官方要求的20Min interval数据格式"""
     pred = _predict(online, n_neighbors, freq=freq, drop_dates=drop_dates)
     return task_2_data.transformed_to_standard_data(pred)

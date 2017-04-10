@@ -36,7 +36,7 @@ def drop_spec_date(data, start_date='2016-07-18', end_date='2016-10-18'):
     :param end_date: 输出数据为当天日期，string类型
     :return:
     """
-    #date_window = [[start_date, '2016-09-15 00:00:00'], ['2016-09-17 23:59:59', '2016-09-30 00:00:00'], ['2016-10-8 23:59:59', end_date]]
+    # date_window = [[start_date, '2016-09-15 00:00:00'], ['2016-09-17 23:59:59', '2016-09-30 00:00:00'], ['2016-10-8 23:59:59', end_date]]
     date_window = [[start_date, '2016-09-15 00:00:00']]
     data_df = pd.DataFrame(columns=data.columns)
     for item in date_window:
@@ -124,7 +124,7 @@ def get_avg_time(data, flag=True):
                     for window in range(1, 13):
                         link_time[link_id]['travel_time'+str(window)] = []
                 for index, item in enumerate(time_inteval):
-                    if start_time_time>=item[0] and start_time_time<=item[1]:
+                    if item[0] <= start_time_time <= item[1]:
                         link_time[link_id]['travel_time'+str(index+1)].append(float(travel_time))
 
     for link_id, time_dic in link_time.iteritems():
@@ -167,13 +167,7 @@ def validaition():
         [115, 102, 109, 104, 112, 111, 103, 122]
     ]
     date_array = ['2016-10-18', '2016-10-19', '2016-10-20', '2016-10-21', '2016-10-22', '2016-10-23', '2016-10-24']
-    # trajectories[0] = [110,123,107,108,120,117]#'A'-> 2
-    # trajectories[1] = [123,107,108,119,114,118,122]#'A'->3
-    # trajectories[2] = [105,100,111,103,116,101,121,106,113]#'B'->1
-    # trajectories[3] = [105,100,111,103,122]#'B'->3
-    # trajectories[4] = [115,102,109,104,112,111,103,116,101,121,106,113]#'C'->1
-    # trajectories[5] = [115,102,109,104,112,111,103,122]#'C'->3
-    link_time = get_avg_time(training_data_df, flag=True)
+    link_time = get_avg_time(train_df, flag=True)
     result_df = pd.DataFrame(columns=['intersection_id', 'tollgate_id', 'time_window', 'avg_travel_time'])
     for idx, trajectory in enumerate(trajectories):
         for day in date_array:
@@ -247,4 +241,4 @@ def test():
 
     result_df[['tollgate_id']] = result_df[['tollgate_id']].astype(int)
     result_df[['avg_travel_time']] = result_df[['avg_travel_time']].astype(float)
-    result_df.to_csv('task1_model_4.submit.csv', index=False)
+    result_df.to_csv('task1_model_4_1.submit.csv', index=False)

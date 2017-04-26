@@ -60,3 +60,44 @@ def show_travel_time_in_window(data, intersection_id, tollgate_id):
     plt.xlabel('date')
     plt.ylabel('avg travel time ')
     plt.show()
+
+
+def show_avg_time_in_day(data):
+    cur_date = ['2016-09-28', '2016-09-29','2016-09-30','2016-10-01']
+    time_inteval = [
+        ['06:00:00', '06:20:00'], ['06:20:00', '06:40:00'], ['06:40:00', '07:00:00'], ['07:00:00', '07:20:00'],
+        ['07:20:00', '07:40:00'], ['07:40:00', '08:00:00'],
+        ['15:00:00', '15:20:00'], ['15:20:00', '15:40:00'], ['15:40:00', '16:00:00'], ['16:00:00', '16:20:00'],
+        ['16:20:00', '16:40:00'], ['16:40:00', '17:00:00']
+
+    ]
+
+    for day in cur_date:
+        avg_time = []
+        for time in time_inteval:
+            data_df = data[(data.starting_time >= day+' '+time[0]) & (data.starting_time <= day+' '+time[1])]
+            avg_time.append(data_df['travel_time'].mean())
+        plt.plot(avg_time, label=str(day))
+    plt.legend(loc='right upper')
+    plt.grid(True)
+    plt.xlabel('time')
+    plt.ylabel('avg travel time')
+    plt.show()
+
+
+def show_result(y_true, y_pred):
+    y_pred.rename(index=str, columns={"avg_travel_time": "ETA_pre"}, inplace=True)
+    y_true.rename(index=str, columns={"avg_travel_time": "ETA_actual"}, inplace=True)
+    df = pd.merge(y_pred, y_true, on=['intersection_id', 'tollgate_id', 'time_window'])
+    df_above = df.iloc[:24]
+    df_ble = df.iloc[30:]
+    df = df_above.append(df_ble, ignore_index=True)
+    df['ETA_pre'].astype(float)
+    df['ETA_actual'].astype(float)
+
+    pred = df['ETA_pre']
+    actual = df['ETA_actual']
+    plt.plot(pred, label='pred')
+    plt.plot(actual, label='actual')
+    plt.legend(loc='right upper')
+    plt.show()

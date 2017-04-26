@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-task1_model_2:回归模型
+task1_model_2:回归模型,线上测试0.1893
 训练数据：2016-07-19至2016-10-17的三个月车辆轨迹数据以及2016-09-17至2016-10-17一个月的交通流量数据
 构建特征工程
 输入空间来自三个月前两个小时6:00:00-8:00:00和15:00:00-17:00:00，输出空间为对应的后两小时8:00:00-10:00：00和17:00:00-19:00:00
@@ -14,11 +14,9 @@ from os import path
 import pandas as pd
 import numpy as np
 import re
-import xgboost as xgb
 from sklearn import neighbors
 from kdd.metrics import task1_eva_metrics
-from sklearn import linear_model
-from sklearn.multioutput import MultiOutputRegressor
+from sklearn.linear_model import MultiTaskLasso
 
 PROJECT_PATH = os.path.dirname(os.path.abspath(__name__))
 dir_path = path.join(PROJECT_PATH, "datasets/dataSets/")
@@ -47,14 +45,15 @@ def drop_spec_date(data, model='model2', start_date='2016-07-18', end_date='2016
     :return:
     """
     if model == 'model2':
-        date_window = [[start_date, '2016-10-01'], ['2016-10-08', end_date]]
+        return data
+        # date_window = [[start_date, '2016-10-01'], ['2016-10-08', end_date]]
     else:
-        date_window = [[start_date, '2016-09-15 00:00:00']]
+        date_window = [[start_date, '2016-09-14 00:00:00']]
     data_df = pd.DataFrame(columns=data.columns)
     for item in date_window:
         _df = data[(data.starting_time >= item[0]) & (data.starting_time <= item[1])]
         data_df = data_df.append(_df, ignore_index=True)
-    return data_df
+    return data
 
 
 def to_submit_format_df(df, flag=True):
@@ -104,7 +103,7 @@ def write_to_file(data, filename):
     data.to_csv(PROJECT_PATH + "/" + filename, index=False)
 
 
-def get_avg_time(model="model2", flag1=True, flag2=True):
+def get_avg_time(flag1=True, flag2=True, model="model2"):
     """
     :param model:
     :param flag1:
@@ -188,7 +187,7 @@ def set_missing_data(df, flag1=True, flag2=True):
     :param flag2: 前两小时为True,后两小时为False
     :return:
     """
-    traj = get_avg_time(flag1, flag2)
+    traj = get_avg_time(flag1, flag2, model='model4')
     col_names = ['travel_time' + str(x) for x in range(1, 7)]
     result = pd.DataFrame(columns=df.columns)
     for index, row in df.iterrows():
@@ -235,7 +234,7 @@ def feature_extract(train_df, flag=True, start_date='2016-07-18', end_date='2016
     data_df = data_df.groupby(['intersection_id', 'tollgate_id', 'date']).sum().reset_index()
 
     data_df = set_missing_data(data_df, flag1=flag, flag2=True)
-
+    # data_df = data_df.fillna(data_df.mean())
     return data_df
 
 
@@ -271,6 +270,7 @@ def label_extract(train_df, flag=True, start_date='2016-07-18', end_date='2016-1
         i += datetime.timedelta(days=1)
     data_df = data_df.groupby(['intersection_id', 'tollgate_id', 'date']).sum().reset_index()
     data_df = set_missing_data(data_df, flag1=flag, flag2=False)
+    # data_df = data_df.fillna(data_df.mean())
     return data_df
 
 
@@ -294,28 +294,30 @@ def local_test():
     本地测试,调参
     :return:
     A->2:
-            0.207286293321
-        0.161001285742
+            0.207286293321->0.1864172206831097
+        0.161001285742->0.155597548413
     A->3
-            0.267706847717
-        0.132676985484
+                                                            0.267706847717->0.263647892489
+        0.132676985484->0.123681004949
     B->1
-        0.156456409916
-            0.232996593942
+        0.156456409916->0.161498934911
+                                                            0.232996593942->0.219184215178
     B->3
-            0.196764506936
-            0.339868798445
+            0.196764506936->0.176043781098
+                                                            0.339868798445->0.354413592777
     C->1
-        0.133456726619
-        0.183167886662
+        0.133456726619->0.127233483076
+        0.183167886662->0.174695517296
     C->3
-            0.221149507591
-            0.208706056411
-    模型融合之后,0.15218938889686356
+                                                            0.221149507591->0.229067771904
+                                                            0.208706056411->0.204767603089
+    模型融合
     """
-    predict_df = pd.DataFrame(columns=['intersection_id', 'tollgate_id', 'time_window', 'avg_travel_time'])
-    actual_df = pd.DataFrame(columns=['intersection_id', 'tollgate_id', 'time_window', 'avg_travel_time'])
-    roads = [['A', 2, False], ['A', 3, False], ['B', 1, True], ['C', 1]]
+    col_names = ['intersection_id', 'tollgate_id', 'time_window', 'avg_travel_time']
+    predict_df = pd.DataFrame(columns=col_names)
+    actual_df = pd.DataFrame(columns=col_names)
+    roads = [['A', 2], ['A', 3], ['B', 3, True], ['C', 3]]
+    # roads = [['A', 2], ['A', 3], ['B', 1], ['B', 3], ['C', 1], ['C', 3]]
     training_file = 'trajectories(table 5)_training.csv'
     for trajectory in roads:
         if len(trajectory) == 3:
@@ -323,13 +325,14 @@ def local_test():
         else:
             sec = [True, False]
         for flag in sec:  # 分上班和下班，上班为True,下班为False
+            # predict_df = pd.DataFrame(columns=col_names)
+            # actual_df = pd.DataFrame(columns=col_names)
             train_df = read_training_data(training_file)
             train_df = drop_spec_date(train_df)
             train_df = train_df[(train_df.intersection_id == trajectory[0]) & (train_df.tollgate_id == trajectory[1])]
 
             X_train_df = feature_extract(train_df, flag=flag, start_date='2016-07-18', end_date='2016-10-10')
             y_train_df = label_extract(train_df, flag=flag, start_date='2016-07-18', end_date='2016-10-10')
-
             X_train_df, y_train_df = data_process(X_train_df, y_train_df)
 
             X_train = X_train_df.iloc[:, -6:]
@@ -341,9 +344,10 @@ def local_test():
 
             X_test = X_test_df.iloc[:, -6:]
 
-            n_neighbors = 10
-            weights = 'distance'
+            n_neighbors = 15
+            weights = 'uniform'
             reg = neighbors.KNeighborsRegressor(n_neighbors, weights=weights)
+            # reg = MultiTaskLasso(alpha=1.)
             pred = reg.fit(X_train, y_train).predict(X_test)
 
             pred_df = pd.DataFrame(pred, columns=X_test_df.columns[3:])
@@ -358,10 +362,12 @@ def local_test():
             act_df = to_submit_format_df(y_test_df, flag=flag)
             predict_df = predict_df.append(pred_df, ignore_index=True)
             actual_df = actual_df.append(act_df, ignore_index=True)
-    print task1_eva_metrics(predict_df.copy(), actual_df.copy())
+    predict_df[['tollgate_id']] = predict_df[['tollgate_id']].astype(int)
+    predict_df[['avg_travel_time']] = predict_df[['avg_travel_time']].astype(float)
+    print task1_eva_metrics(predict_df.copy(), pd.read_csv('10.11-10.17-8:00-10:00.csv', header=0))
 
     date_array = ['2016-10-11', '2016-10-12', '2016-10-13', '2016-10-14', '2016-10-15', '2016-10-16', '2016-10-17']
-    roads = [['A', 2, True], ['A', 3, True], ['B', 1, False], ['B', 3], ['C', 3]]
+    roads = [['B', 1], ['B', 3, False], ['C', 1]]
     # roads = [['A', 2], ['A', 3], ['B', 1], ['B', 3], ['C', 1], ['C', 3]]
 
     # go_to_work = [['06:00:00', '06:20:00'], ['06:20:00', '06:40:00'], ['06:40:00', '07:00:00'], ['07:00:00', '07:20:00'],
@@ -397,11 +403,12 @@ def local_test():
     predict_df[['avg_travel_time']] = predict_df[['avg_travel_time']].astype(float)
 
     print task1_eva_metrics(predict_df.copy(), pd.read_csv('10.11-10.17-8:00-10:00.csv', header=0))
+    return predict_df
 
 
 def predict():
     predict_df = pd.DataFrame(columns=['intersection_id', 'tollgate_id', 'time_window', 'avg_travel_time'])
-    roads = [['A', 2, False], ['A', 3, False], ['B', 1, True], ['C', 1]]
+    roads = [['A', 2], ['A', 3], ['B', 3, True], ['C', 3]]
     training_file = 'trajectories(table 5)_training.csv'
     testing_file = 'trajectories(table 5)_test1.csv'
     for trajectory in roads:
@@ -418,20 +425,20 @@ def predict():
 
             X_train_df = feature_extract(train_df, flag=flag, start_date='2016-07-18', end_date='2016-10-17')
             y_train_df = label_extract(train_df, flag=flag, start_date='2016-07-18', end_date='2016-10-17')
-
             X_train_df, y_train_df = data_process(X_train_df, y_train_df)
-
+            # print X_train_df
+            # print y_train_df
             X_train = X_train_df.iloc[:, -6:]
             y_train = y_train_df.iloc[:, -6:]
 
             X_test_df = feature_extract(test_df, flag=flag, start_date='2016-10-17', end_date='2016-10-24')
-
             X_test = X_test_df.iloc[:, -6:]
 
-            n_neighbors = 10
+            n_neighbors = 15
             weights = 'distance'
             reg = neighbors.KNeighborsRegressor(n_neighbors, weights=weights)
-            pred = reg.fit(X_train, y_train).predict(X_test)
+            reg.fit(X_train, y_train)
+            pred = reg.predict(X_test)
 
             pred_df = pd.DataFrame(pred, columns=X_test_df.columns[3:])
             _intersection_arr = X_test_df['intersection_id']
@@ -445,7 +452,7 @@ def predict():
             predict_df = predict_df.append(pred_df, ignore_index=True)
 
     date_array = ['2016-10-18', '2016-10-19', '2016-10-20', '2016-10-21', '2016-10-22', '2016-10-23', '2016-10-24']
-    roads = [['A', 2, True], ['A', 3, True], ['B', 1, False], ['B', 3], ['C', 3]]
+    roads = [['B', 1], ['B', 3, False], ['C', 1]]
     go_to_work = [['08:00:00', '08:20:00'], ['08:20:00', '08:40:00'], ['08:40:00', '09:00:00'],
                   ['09:00:00', '09:20:00'], ['09:20:00', '09:40:00'], ['09:40:00', '10:00:00']]
     leave_for_work = [['17:00:00', '17:20:00'], ['17:20:00', '17:40:00'], ['17:40:00', '18:00:00'],
@@ -474,4 +481,4 @@ def predict():
     predict_df[['tollgate_id']] = predict_df[['tollgate_id']].astype(int)
     predict_df[['avg_travel_time']] = predict_df[['avg_travel_time']].astype(float)
 
-    write_to_file(predict_df, 'task_1_Model_2_combine_model_4_submit.csv')
+    write_to_file(predict_df, 'task_1_Model_2_combine_model_4_4月23日.csv')

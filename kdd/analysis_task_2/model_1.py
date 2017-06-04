@@ -22,9 +22,9 @@
 from __future__ import division
 from __future__ import print_function
 
-from sklearn.neighbors import NearestNeighbors
 import numpy as np
 import pandas as pd
+from sklearn.neighbors import NearestNeighbors
 
 from ..data_preprocess import database
 
@@ -42,7 +42,7 @@ tollgate_direction_list = [(1, 0), (1, 1), (2, 0), (3, 0), (3, 1)]
 # start_time='06:00:00', end_time='07:59:59'
 # start_time='15:00:00', end_time='16:59:59'
 offline_fit_date = ("2016-10-11", "2016-10-17")
-offline_fit_data = [(database.get_volume_by_time(tollgate_id, direction_id, start_time='06:00:00', end_time='07:59:59',
+offline_fit_data = [(database.get_volumde_by_time(tollgate_id, direction_id, start_time='06:00:00', end_time='07:59:59',
                                                  sumed_in_one_day=False,
                                                  start_date=offline_fit_date[0], end_date=offline_fit_date[-1]),
                       database.get_volume_by_time(tollgate_id, direction_id, start_time='15:00:00', end_time='16:59:59',
@@ -181,7 +181,7 @@ def transformed_to_standard_data(data_list):
     return standard_predict
 
 
-def get__test_data_list(off_line_test_data):
+def get__test_data_list(offline_test_data):
     """返回的数据和predict格式一样, shape也一样"""
     off_line_test_data = offline_test_data
     res_data = []
@@ -219,7 +219,7 @@ def _predict(online=False, n_neighbors=5):
     return res_predict
 
 
-def nearest_neighbour(online=False, n_neighbors=5):
+def nearest_neighbour(online=False, n_neighbors=4):
     """
     :param online: bool. 是否是线上
     :param n_neighbors: int. 邻居数目

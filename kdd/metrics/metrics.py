@@ -29,7 +29,7 @@ def task1_eva_metrics(predict, actual):
     df['ETA_pre'].astype(float)
     df['ETA_actual'].astype(float)
     df['diff'] = (np.abs(df['ETA_pre']-df['ETA_actual']))/df['ETA_actual']
-    grouped_by_id = df.groupby(['intersection_id','tollgate_id'])['diff'].mean()
+    grouped_by_id = df.groupby(['intersection_id', 'tollgate_id'])['diff'].mean()
     grouped_by_id = grouped_by_id.reset_index()
     MAPE = grouped_by_id['diff'].mean()
    

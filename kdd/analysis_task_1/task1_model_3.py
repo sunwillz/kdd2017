@@ -72,7 +72,7 @@ def data_filter(data, start_date, end_date, flag = False):
     return data_df_pred if flag else data_df_known
 
 
-def get_avg_time(data,weekday,flag = False):
+def get_avg_time(data,flag = False):
     """
     由指定的星期几,link_id和时间段获取平均时间(ETA)
     :param link_id:
@@ -139,7 +139,7 @@ def validaition():
     train_df = read_training_data(training_file)
     train_df = drop_spec_date(train_df)
 
-    training_data_df = data_filter(train_df, start_date='2016-07-18', end_date='2016-10-17')
+    training_data_df = data_filter(train_df, start_date='2016-07-18', end_date='2016-10-10')
 
     time_inteval_known = [
         ['06:00:00', '06:20:00'], ['06:20:00', '06:40:00'], ['06:40:00', '07:00:00'], ['07:00:00', '07:20:00'],
@@ -181,7 +181,7 @@ def validaition():
                 row = []
                 row.append(roads[idx][0])
                 row.append(roads[idx][1])
-                row.append('['+day+' '+time_inteval_known[time_window-1][0]+','+day+' '+time_inteval_known[time_window-1][1]+')')
+                row.append('['+day+' '+time_inteval_pred[time_window-1][0]+','+day+' '+time_inteval_pred[time_window-1][1]+')')
                 travel_time = 0
                 for link_id in trajectory:
                     travel_time += link_time[str(link_id)]['travel_time'+str(time_window)]
@@ -191,7 +191,7 @@ def validaition():
     result_df[['tollgate_id']] = result_df[['tollgate_id']].astype(int)
     result_df[['avg_travel_time']] = result_df[['avg_travel_time']].astype(float)
 
-    task1_eva_metrics(result_df.copy(), pd.read_csv('10.18-10.24-6:00-8:00.csv', header=0))
+    task1_eva_metrics(result_df.copy(), pd.read_csv('10.11-10.17-8:00-10:00.csv', header=0))
 
 
 def test():
